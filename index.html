@@ -17,11 +17,14 @@ const {
 	init,
 	node,
 	node_dom,
+	node_map,
 }=lui;
 
 function IndexEntry({
-	name="no Name",
-	time="00:00",
+	I:{
+		name="no Name",
+		time="00:00",
+	},
 }){
 	return[
 		node_dom("tr",null,[
@@ -32,6 +35,24 @@ function IndexEntry({
 }
 
 init(()=>{
+	const entries=[
+		{
+			id:0,
+			name:"Aufstehen",
+			time:"07:00",
+		},
+		{
+			id:1,
+			name:"L3P3-Nerven",
+			time:"19:00",
+		},
+		{
+			id:2,
+			name:"Schlafen",
+			time:"21:00",
+		},
+	];
+
 	return[
 		{
 			S:{
@@ -45,18 +66,8 @@ init(()=>{
 					node_dom("th",{innerText:"Name"}),
 					node_dom("th",{innerText:"Uhrzeit"}),
 				]),
-				node(IndexEntry,{
-					name:"Aufstehen",
-					time:"07:00",
-				}),
-				node(IndexEntry,{
-					name:"L3P3-Nerven",
-					time:"19:00",
-				}),
-				node(IndexEntry,{
-					name:"Schlafen",
-					time:"21:00",
-				}),
+
+				node_map(IndexEntry,entries),
 			]),
 		],
 	];
