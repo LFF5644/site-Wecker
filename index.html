@@ -19,26 +19,26 @@ const {
 	node_dom,
 	node_map,
 	hook_model,
-}=lui;const model={
-	init:()=>({
-		entries:[
-			{
-				id:0,
-				name:"Aufstehen",
-				time:"07:00",
-			},
-			{
-				id:1,
-				name:"L3P3-Nerven",
-				time:"19:00",
-			},
-			{
-				id:2,
-				name:"Schlafen",
-				time:"21:00",
-			},
-		],
-	}),
+	hook_effect,
+}=lui;
+
+const model={
+	init:()=>{
+		const entries=localStorage.getItem("wecker_entries");
+		if(!entries){
+			console.log("localStorage item not found, this is not an error!");
+			return {
+				entries:[
+					{
+						"id":Date.now(),
+						"name":"demo",
+						"time":"12:00",
+					},
+				],
+			};
+		}
+		return {"entries":JSON.parse(entries)};
+	},
 	addEntry:(state,item)=>({
 		...state,
 		entries:[
@@ -53,13 +53,19 @@ const {
 			.filter(item=>item.id!=itemId)
 		),
 	}),
+	saveEntries:(state)=>{
+		console.log(JSON.stringify(state,null,4))
+		if(typeof(state.entries)!="object"){return state;}
+		localStorage.setItem("wecker_entries",JSON.stringify(state.entries));
+		return state;
+	},
 };
 
 function IndexEntry({
 	I:{
 		id,
-		name="no Name",
-		time="00:00",
+		name,
+		time,
 	},
 	actions,
 }){
@@ -83,6 +89,7 @@ init(()=>{
 		{entries},
 		actions,
 	]=hook_model(model);
+	hook_effect(actions.saveEntries,[entries]);
 	//console.log("UPDATE...")
 	return[
 		{
@@ -92,6 +99,7 @@ init(()=>{
 		},
 		[
 			node_dom("h1[innerText=Wecker]"),
+			
 			entries.length>0&&
 			node_dom("table[border=3px][width=100%]",null,[
 				node_dom("tr",null,[
@@ -102,14 +110,18 @@ init(()=>{
 
 				node_map(IndexEntry,entries,{actions}),
 			]),
+
 			entries.length==0&&
 			node_dom("p",null,[
 				node_dom("span[innerText=Keine Wecker vohrhanden, Wecker ]"),
-				node_dom("a[innerText=jz Erstellen!]",{href:"#",onclick:()=>{
-					const name=prompt("Wecker-Name:");
-					const time=prompt("Wecker-Zeit:");
-					actions.addEntry({id:Date.now(),name,time});
-				}}),
+				node_dom("a[innerText=jz Erstellen!]",{
+					href:"#",
+					onclick:()=>{
+						const name=prompt("Wecker-Name:");
+						const time=prompt("Wecker-Zeit:");
+						actions.addEntry({id:Date.now(),name,time});
+					}
+				}),
 			]),
 			node_dom("button[innerText=+][title=Wecker hinzufügen]",{
 				onclick:()=>{
