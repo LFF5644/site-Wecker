@@ -15,8 +15,21 @@
 <script>
 const {
 	init,
+	node,
 	node_dom,
 }=lui;
+
+function IndexEntry({
+	name="no Name",
+	time="00:00",
+}){
+	return[
+		node_dom("tr",null,[
+			node_dom("td",{innerText:name}),
+			node_dom("td",{innerText:time}),
+		]),
+	];
+}
 
 init(()=>{
 	return[
@@ -26,9 +39,25 @@ init(()=>{
 			},
 		},
 		[
-			node_dom("h1",{
-				innerText:"Wecker",
-			}),
+			node_dom("h1",{innerText:"Wecker",}),
+			node_dom("table",{border:"3px"},[
+				node_dom("tr",null,[
+					node_dom("th",{innerText:"Name"}),
+					node_dom("th",{innerText:"Uhrzeit"}),
+				]),
+				node(IndexEntry,{
+					name:"Aufstehen",
+					time:"07:00",
+				}),
+				node(IndexEntry,{
+					name:"L3P3-Nerven",
+					time:"19:00",
+				}),
+				node(IndexEntry,{
+					name:"Schlafen",
+					time:"21:00",
+				}),
+			]),
 		],
 	];
 });
