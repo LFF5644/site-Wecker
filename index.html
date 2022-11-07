@@ -7,9 +7,31 @@
 	<meta name=viewport content="width=device-width">
 	<!--<link rel=stylesheet type=text/css href=/css/main.css>-->
 	<!--<script src="/scripts/import.js"></script>-->
+	<script src="https://cdn.jsdelivr.net/gh/L3P3/lui@v1.3.x/lui.dev.js"></script>
 </head>
 <body>
-	<h1>Wecker</h1>
-	<p>...</p>
+<h1>JavaScript is disabled</h1>
+<button onclick="location.reload();">reload page</button>
+<script>
+const {
+	init,
+	node_dom,
+}=lui;
+
+init(()=>{
+	return[
+		{
+			S:{
+				fontFamily:"arial",
+			},
+		},
+		[
+			node_dom("h1",{
+				innerText:"Wecker",
+			}),
+		],
+	];
+});
+</script>
 </body>
 </html>
