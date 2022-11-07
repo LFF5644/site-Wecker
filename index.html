@@ -19,8 +19,7 @@ const {
 	node_dom,
 	node_map,
 	hook_model,
-}=lui;
-const model={
+}=lui;const model={
 	init:()=>({
 		entries:[
 			{
@@ -47,25 +46,44 @@ const model={
 			item,
 		],
 	}),
+	removeEntry:(state,itemId)=>({
+		...state,
+		entries:(
+			state.entries
+			.filter(item=>item.id!=itemId)
+		),
+	}),
 };
 
 function IndexEntry({
 	I:{
+		id,
 		name="no Name",
 		time="00:00",
 	},
+	actions,
 }){
 	return[
 		node_dom("tr",null,[
 			node_dom("td",{innerText:name}),
 			node_dom("td",{innerText:time}),
+			node_dom("td",null,[
+				node_dom("button[innerText=DEL][style=color:red]",{
+					onclick:()=>{
+						actions.removeEntry(id);
+					},
+				}),
+			]),
 		]),
 	];
 }
 
 init(()=>{
-	const [{entries},actions]=hook_model(model);
-
+	const [
+		{entries},
+		actions,
+	]=hook_model(model);
+	//console.log("UPDATE...")
 	return[
 		{
 			S:{
@@ -74,19 +92,32 @@ init(()=>{
 		},
 		[
 			node_dom("h1[innerText=Wecker]"),
-			node_dom("table",{border:"3px"},[
+			entries.length>0&&
+			node_dom("table[border=3px][width=100%]",null,[
 				node_dom("tr",null,[
 					node_dom("th[innerText=Name]"),
 					node_dom("th[innerText=Uhrzeit]"),
+					node_dom("th[innerText=Aktionen]"),
 				]),
 
-				node_map(IndexEntry,entries),
+				node_map(IndexEntry,entries,{actions}),
 			]),
-			node_dom("button[innerText=+]",{onclick:()=>{
-				const name=prompt("Wecker-Name:");
-				const time=prompt("Wecker-Zeit:");
-				actions.addEntry({id:Date.now(),name,time});
-			}})
+			entries.length==0&&
+			node_dom("p",null,[
+				node_dom("span[innerText=Keine Wecker vohrhanden, Wecker ]"),
+				node_dom("a[innerText=jz Erstellen!]",{href:"#",onclick:()=>{
+					const name=prompt("Wecker-Name:");
+					const time=prompt("Wecker-Zeit:");
+					actions.addEntry({id:Date.now(),name,time});
+				}}),
+			]),
+			node_dom("button[innerText=+][title=Wecker hinzufügen]",{
+				onclick:()=>{
+					const name=prompt("Wecker-Name:");
+					const time=prompt("Wecker-Zeit:");
+					actions.addEntry({id:Date.now(),name,time});
+				},
+			}),
 		],
 	];
 });
