@@ -2,12 +2,13 @@
 <html>
 <head>
 	<title>Wecker</title>
-	<!--<link rel="shortcut icon" href=//lff.l3p3.de/favicon.png>-->
+	<!--<link rel="shortcut icon" href=http://lff.l3p3.de/favicon.png>-->
 	<meta charset=utf-8>
 	<meta name=viewport content="width=device-width">
 	<!--<link rel=stylesheet type=text/css href=/css/main.css>-->
 	<!--<script src="/scripts/import.js"></script>-->
-	<script src="https://cdn.jsdelivr.net/gh/L3P3/lui@v1.3.x/lui.dev.js"></script>
+	<!--<script src="https://lff.l3p3.de/files/other/lui/lui.dev.js"></script>-->
+	<script src=https://cdn.jsdelivr.net/gh/L3P3/lui@v1.3.x/lui.dev.js></script>
 </head>
 <body>
 <h1>JavaScript is disabled</h1>
@@ -25,19 +26,20 @@ const {
 const model={
 	init:()=>{
 		const entries=localStorage.getItem("wecker_entries");
+		const state={};
+		state.editing=-1;
 		if(!entries){
 			console.log("localStorage item not found, this is not an error!");
-			return {
-				entries:[
-					{
-						"id":Date.now(),
-						"name":"demo",
-						"time":"12:00",
-					},
-				],
+			state.entries={
+				id:Date.now(),
+				name:"demo",
+				time:"12:00",
 			};
 		}
-		return {"entries":JSON.parse(entries)};
+		else{
+			state.entries=JSON.parse(entries);
+		}
+		return state;
 	},
 	addEntry:(state,item)=>({
 		...state,
@@ -50,15 +52,29 @@ const model={
 		...state,
 		entries:(
 			state.entries
-			.filter(item=>item.id!=itemId)
+			.filter(item=>item.id!==itemId)
 		),
 	}),
 	saveEntries:(state)=>{
-		console.log(JSON.stringify(state,null,4))
-		if(typeof(state.entries)!="object"){return state;}
+		//console.log(JSON.stringify(state,null,4))
+		if(typeof(state.entries)!=="object"){return state;}
 		localStorage.setItem("wecker_entries",JSON.stringify(state.entries));
 		return state;
 	},
+	editEntryUI:(state,itemId)=>{
+		state={...state};
+		state.editing=itemId;
+		return state;
+	},
+	editEntry:(state,[itemId,changes])=>({
+		...state,
+		entries:(
+			state.entries
+			.map(item=>
+				item.id!==itemId?item:{...item,...changes}
+			)
+		),
+	}),
 };
 
 function IndexEntry({
@@ -79,14 +95,90 @@ function IndexEntry({
 						actions.removeEntry(id);
 					},
 				}),
+				node_dom("button[innerText=EDIT][style=color:orange]",{
+					onclick:()=>{
+						actions.editEntryUI(id);
+					},
+				}),
 			]),
 		]),
 	];
 }
+function ScreenMain({entries,actions}){
+	return [
+		node_dom("h1[innerText=Wecker]"),
+		
+		entries.length>0&&
+		node_dom("table[border=3px][width=100%]",null,[
+			node_dom("tr",null,[
+				node_dom("th[innerText=Name]"),
+				node_dom("th[innerText=Uhrzeit]"),
+				node_dom("th[innerText=Aktionen]"),
+			]),
 
+			node_map(IndexEntry,entries,{actions}),
+		]),
+
+		entries.length===0&&
+		node_dom("p",null,[
+			node_dom("span[innerText=Keine Wecker vohrhanden, Wecker ]"),
+			node_dom("a[innerText=jz Erstellen!]",{
+				href:"#",
+				onclick:()=>{
+					const name=prompt("Wecker-Name:");
+					const time=prompt("Wecker-Zeit:");
+					actions.addEntry({id:Date.now(),name,time});
+				}
+			}),
+		]),
+		node_dom("button[innerText=+][title=Wecker hinzufügen]",{
+			onclick:()=>{
+				const name=prompt("Wecker-Name:");
+				const time=prompt("Wecker-Zeit:");
+				actions.addEntry({id:Date.now(),name,time});
+			},
+		}),
+	];
+}
+function ScreenEditing({entry,actions}){
+	return[
+		node_dom("h1",{innerText:`Wecker "${entry.name}" bearbeiten`}),
+		node_dom("p",null,[
+			node_dom("label",null,[
+				node_dom("span[innerText=Wecker-Name: ]"),
+				node_dom("input",{
+					value:entry.name,
+					oninput:event=>{
+						//console.log(event.target.value);
+						actions.editEntry([entry.id,{name:event.target.value}]);
+					},
+				}),
+			]),
+		]),
+		node_dom("p",null,[
+			node_dom("label",null,[
+				node_dom("span[innerText=Wecker-Zeit: ]"),
+				node_dom("input",{
+					value:entry.time,
+					oninput:event=>{
+						//console.log(event.target.value);
+						actions.editEntry([entry.id,{time:event.target.value}]);
+					},
+				}),
+			]),
+		]),
+
+		node_dom("button[innerText=Zurück][style=color:green]",{
+			onclick:()=>{
+				actions.editEntryUI(-1);
+			},
+		}),
+
+	];
+}
 init(()=>{
 	const [
-		{entries},
+		{entries,editing},
 		actions,
 	]=hook_model(model);
 	hook_effect(actions.saveEntries,[entries]);
@@ -98,37 +190,13 @@ init(()=>{
 			},
 		},
 		[
-			node_dom("h1[innerText=Wecker]"),
+			editing===-1&&
+			node(ScreenMain,{actions,entries}),
 			
-			entries.length>0&&
-			node_dom("table[border=3px][width=100%]",null,[
-				node_dom("tr",null,[
-					node_dom("th[innerText=Name]"),
-					node_dom("th[innerText=Uhrzeit]"),
-					node_dom("th[innerText=Aktionen]"),
-				]),
-
-				node_map(IndexEntry,entries,{actions}),
-			]),
-
-			entries.length==0&&
-			node_dom("p",null,[
-				node_dom("span[innerText=Keine Wecker vohrhanden, Wecker ]"),
-				node_dom("a[innerText=jz Erstellen!]",{
-					href:"#",
-					onclick:()=>{
-						const name=prompt("Wecker-Name:");
-						const time=prompt("Wecker-Zeit:");
-						actions.addEntry({id:Date.now(),name,time});
-					}
-				}),
-			]),
-			node_dom("button[innerText=+][title=Wecker hinzufügen]",{
-				onclick:()=>{
-					const name=prompt("Wecker-Name:");
-					const time=prompt("Wecker-Zeit:");
-					actions.addEntry({id:Date.now(),name,time});
-				},
+			editing!==-1&&
+			node(ScreenEditing,{
+				actions,
+				entry:entries.find(item=>item.id===editing),
 			}),
 		],
 	];
