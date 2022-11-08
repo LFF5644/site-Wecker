@@ -9,6 +9,12 @@
 	<!--<script src="/scripts/import.js"></script>-->
 	<!--<script src="https://lff.l3p3.de/files/other/lui/lui.dev.js"></script>-->
 	<script src=https://cdn.jsdelivr.net/gh/L3P3/lui@v1.3.x/lui.dev.js></script>
+	<link rel=preload href=https://lff.l3p3.de/files/sounds/alarmOldWecker.mp3 as=audio>
+	<style>
+		.isRinging{
+			background-color: red;
+		}
+	</style>
 </head>
 <body>
 <h1>JavaScript is disabled</h1>
@@ -19,34 +25,44 @@ const {
 	node,
 	node_dom,
 	node_map,
+	hook_dom,
 	hook_model,
 	hook_effect,
 }=lui;
-
+const audio_ring="https://lff.l3p3.de/files/sounds/alarmOldWecker.mp3";
+const entryTemplate={
+	id:0,
+	name:"demo",
+	time:"12:00",
+	isRinging:false,
+	lastRingDay:0,
+}
 const model={
 	init:()=>{
 		const entries=localStorage.getItem("wecker_entries");
 		const state={
 			editing:-1,
+			audioPlayer:null,
 			entries:entries
 			?
 				JSON.parse(entries)
 			:
-				[
-					{
-						id:Date.now(),
-						name:"demo",
-						time:"12:00",
-					},
-				],
+				[{
+					...entryTemplate,
+					id:Date.now(),
+				}],
 		};
 		return state;
 	},
-	addEntry:(state,item)=>({
+	addEntry:(state,changes={})=>({
 		...state,
 		entries:[
 			...state.entries,
-			item,
+			{
+				...entryTemplate,
+				id:Date.now(),
+				...changes,
+			},
 		],
 	}),
 	removeEntry:(state,itemId)=>({
@@ -75,39 +91,69 @@ const model={
 		),
 	}),
 };
+function Ringer({I:{isRinging}}) {
+	const player=hook_dom('audio[loop]',{src:audio_ring});
+	hook_effect(()=>{
+		if(isRinging){
+			console.log("START RINGING...");
+			player.currentTime=0;
+			player.play();
+		}
+		else{
+			console.log("STOP RINGING!")
+			player.pause();
+		}
+	},[isRinging]);
+	return null;
+}
 
 function IndexEntry({
 	I:{
 		id,
 		name,
 		time,
+		isRinging,
 	},
 	actions,
 }){
 	return[
-		node_dom("tr",null,[
-			node_dom("td",{innerText:name}),
-			node_dom("td",{innerText:time}),
-			node_dom("td",null,[
-				node_dom("button[innerText=DEL][style=color:red]",{
-					onclick:()=>{
-						actions.removeEntry(id);
-					},
-				}),
-				node_dom("button[innerText=EDIT][style=color:orange]",{
-					onclick:()=>{
-						actions.editEntryUI(id);
-					},
-				}),
+		node_dom("tr",{
+				F:{
+					isRinging,
+				},
+			},
+			[
+				node_dom("td",{innerText:name}),
+				node_dom("td",{innerText:time}),
+				node_dom("td",null,[
+					node_dom("button[innerText=DEL][style=color:red]",{
+						onclick:()=>{
+							actions.removeEntry(id);
+						},
+					}),
+					node_dom("button[innerText=EDIT][style=color:orange]",{
+						onclick:()=>{
+							actions.editEntryUI(id);
+						},
+					}),
+					isRinging&&
+					node_dom("button[innerText=STOPP!!][style=color:yellow]",{
+						onclick:()=>{
+							actions.editEntry([id,{isRinging:false}]);
+						},
+					}),
+				]),
 			]),
-		]),
 	];
 }
 function ScreenMain({entries,actions}){
 	const createEntry=()=>{
-		const name=prompt("Wecker-Name:");
-		const time=prompt("Wecker-Zeit:");
-		actions.addEntry({id:Date.now(),name,time});
+		const name=prompt("Wecker-Name:")||"no Name";
+		const time=prompt("Wecker-Zeit:")||"00:00";
+		actions.addEntry({
+			name,
+			time,
+		});
 	};
 	return [
 		node_dom("h1[innerText=Wecker]"),
@@ -144,7 +190,10 @@ function ScreenEditing({entry,actions}){
 				node_dom("input",{
 					value:entry.name,
 					oninput:event=>{
-						actions.editEntry([entry.id,{name:event.target.value}]);
+						actions.editEntry([entry.id,{
+							name:event.target.value,
+							lastRingDay:0,
+						}]);
 					},
 				}),
 			]),
@@ -155,7 +204,10 @@ function ScreenEditing({entry,actions}){
 				node_dom("input",{
 					value:entry.time,
 					oninput:event=>{
-						actions.editEntry([entry.id,{time:event.target.value}]);
+						actions.editEntry([entry.id,{
+							time:event.target.value,
+							lastRingDay:0,
+						}]);
 					},
 				}),
 			]),
@@ -169,6 +221,40 @@ function ScreenEditing({entry,actions}){
 
 	];
 }
+const checkEntriesEffect=(entries,actions)=>{
+	const interval=setInterval(()=>{
+		console.log("check for ring...")
+		const date=new Date();
+		const msPerDay=24*60*60*1000;
+		const time=[
+			date.getHours(),
+			date.getMinutes(),
+		];
+		const thisDayTime=date.getTime()%msPerDay;
+		const thisDay=date.getTime()-thisDayTime;
+
+		for(entry of entries){
+			let [hour,minute]=entry.time.split(":");
+			hour=Number(hour);
+			minute=Number(minute);
+			if(
+				hour===time[0]&&
+				minute===time[1]&&
+				entry.lastRingDay<thisDay
+				//TODO check wecker on and correct day;
+			){
+				actions.editEntry([entry.id,{
+					isRinging:true,
+					lastRingDay:thisDay,
+				}]);
+				
+				alert(`ALARM! es ist ${entry.time} es klingelt wecker "${entry.name}"`);
+				
+			}
+		}
+	},5000);
+	return ()=>clearInterval(interval);
+}
 
 init(()=>{
 	const [
@@ -176,6 +262,9 @@ init(()=>{
 		actions,
 	]=hook_model(model);
 	hook_effect(actions.saveEntries,[entries]);
+	hook_effect(checkEntriesEffect,[entries,actions]);
+	
+
 	return[
 		{
 			S:{
@@ -191,6 +280,7 @@ init(()=>{
 				actions,
 				entry:entries.find(item=>item.id===editing),
 			}),
+			node_map(Ringer,entries),
 		],
 	];
 });
