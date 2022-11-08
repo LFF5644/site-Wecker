@@ -26,19 +26,20 @@ const {
 const model={
 	init:()=>{
 		const entries=localStorage.getItem("wecker_entries");
-		const state={};
-		state.editing=-1;
-		if(!entries){
-			console.log("localStorage item not found, this is not an error!");
-			state.entries={
-				id:Date.now(),
-				name:"demo",
-				time:"12:00",
-			};
-		}
-		else{
-			state.entries=JSON.parse(entries);
-		}
+		const state={
+			editing:-1,
+			entries:entries
+			?
+				JSON.parse(entries)
+			:
+				[
+					{
+						id:Date.now(),
+						name:"demo",
+						time:"12:00",
+					},
+				],
+		};
 		return state;
 	},
 	addEntry:(state,item)=>({
@@ -56,16 +57,14 @@ const model={
 		),
 	}),
 	saveEntries:(state)=>{
-		//console.log(JSON.stringify(state,null,4))
 		if(typeof(state.entries)!=="object"){return state;}
 		localStorage.setItem("wecker_entries",JSON.stringify(state.entries));
 		return state;
 	},
-	editEntryUI:(state,itemId)=>{
-		state={...state};
-		state.editing=itemId;
-		return state;
-	},
+	editEntryUI:(state,itemId)=>({
+		...state,
+		editing:itemId,
+	}),
 	editEntry:(state,[itemId,changes])=>({
 		...state,
 		entries:(
@@ -105,6 +104,11 @@ function IndexEntry({
 	];
 }
 function ScreenMain({entries,actions}){
+	const createEntry=()=>{
+		const name=prompt("Wecker-Name:");
+		const time=prompt("Wecker-Zeit:");
+		actions.addEntry({id:Date.now(),name,time});
+	};
 	return [
 		node_dom("h1[innerText=Wecker]"),
 		
@@ -121,22 +125,13 @@ function ScreenMain({entries,actions}){
 
 		entries.length===0&&
 		node_dom("p",null,[
-			node_dom("span[innerText=Keine Wecker vohrhanden, Wecker ]"),
-			node_dom("a[innerText=jz Erstellen!]",{
-				href:"#",
-				onclick:()=>{
-					const name=prompt("Wecker-Name:");
-					const time=prompt("Wecker-Zeit:");
-					actions.addEntry({id:Date.now(),name,time});
-				}
+			node_dom("span[innerText=Keine Wecker vorhanden, ]"),
+			node_dom("a[innerText=Wecker jetzt erstellen!][href=#]",{
+				onclick:createEntry,
 			}),
 		]),
 		node_dom("button[innerText=+][title=Wecker hinzufügen]",{
-			onclick:()=>{
-				const name=prompt("Wecker-Name:");
-				const time=prompt("Wecker-Zeit:");
-				actions.addEntry({id:Date.now(),name,time});
-			},
+			onclick:createEntry,
 		}),
 	];
 }
@@ -149,7 +144,6 @@ function ScreenEditing({entry,actions}){
 				node_dom("input",{
 					value:entry.name,
 					oninput:event=>{
-						//console.log(event.target.value);
 						actions.editEntry([entry.id,{name:event.target.value}]);
 					},
 				}),
@@ -161,7 +155,6 @@ function ScreenEditing({entry,actions}){
 				node_dom("input",{
 					value:entry.time,
 					oninput:event=>{
-						//console.log(event.target.value);
 						actions.editEntry([entry.id,{time:event.target.value}]);
 					},
 				}),
@@ -176,13 +169,13 @@ function ScreenEditing({entry,actions}){
 
 	];
 }
+
 init(()=>{
 	const [
 		{entries,editing},
 		actions,
 	]=hook_model(model);
 	hook_effect(actions.saveEntries,[entries]);
-	//console.log("UPDATE...")
 	return[
 		{
 			S:{
@@ -192,7 +185,7 @@ init(()=>{
 		[
 			editing===-1&&
 			node(ScreenMain,{actions,entries}),
-			
+
 			editing!==-1&&
 			node(ScreenEditing,{
 				actions,
