@@ -22,14 +22,17 @@ const model={
 		const entries=localStorage.getItem("wecker_entries");
 		const state={
 			editing:-1,
-			entries:entries
-			?
-				JSON.parse(entries)
-			:
-				[{
-					...entryTemplate,
-					id:Date.now(),
-				}],
+			entries:(
+				entries
+				?	JSON.parse(entries).map(item=>({
+						...entryTemplate,
+						...item,
+					}))
+				:	[{
+						...entryTemplate,
+						id:Date.now(),
+					}]
+			),
 		};
 		return state;
 	},
