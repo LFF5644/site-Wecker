@@ -16,7 +16,27 @@ const entryTemplate={
 	isRinging:false,
 	lastRingDay:0,
 	disabled:false,
+	ringEveryDay:true,
+	ringDays:[
+		true,	//Montag;
+		true,	//Dienstag;
+		true,	//Mittwoch;
+		true,	//Donnerstag;
+		true,	//Freitag;
+		false,	//Samstag;
+		false,	//Sonntag;
+	],
 }
+const dayNames=[
+	"Montag",
+	"Dienstag",
+	"Mittwoch",
+	"Donnerstag",
+	"Freitag",
+	"Samstag",
+	"Sonntag",
+];
+
 const model={
 	init:()=>{
 		const entries=localStorage.getItem("wecker_entries");
@@ -196,7 +216,7 @@ function ScreenEditing({entry,actions}){
 		]),
 		node_dom("p",null,[
 			node_dom("label",{title:`Wecker ist derzeit ${entry.disabled?'aus':'an'}`},[
-				node_dom("span[innerText=Wecker einschalten]"),
+				node_dom("span[innerText=Wecker einschalten ]"),
 				node_dom("input[type=checkbox]",{
 					checked:!entry.disabled,
 					oninput:(event)=>{
@@ -207,6 +227,44 @@ function ScreenEditing({entry,actions}){
 					},
 				}),
 			]),
+		]),
+		node_dom("p",null,[
+			node_dom("label",{title:`Wecker klingelt jetzt ${entry.ringEveryDay?'jeden':'manchen'} Tag`},[
+				node_dom("span[innerText=Jeden Tag klingeln ]"),
+				node_dom("input[type=checkbox]",{
+					checked:entry.ringEveryDay,
+					oninput:(event)=>{
+						actions.editEntry([entry.id,{
+							ringEveryDay:event.target.checked,
+							lastRingDay:0,
+						}]);
+					},
+				}),
+			]),
+		]),
+		!entry.ringEveryDay&&
+		node_dom("fieldset",null,[
+			node_dom("legend[innerText=Wochentage]"),
+			...dayNames.map((day,index)=>
+				node_dom("p",null,[
+					node_dom("label",null,[
+						node_dom(`span[innerText=${day} ]`),
+						node_dom("input[type=checkbox]",{
+							checked:entry.ringDays[index],
+							oninput:(event)=>{
+								actions.editEntry([entry.id,{
+									ringDays:entry.ringDays.map((item,i)=>
+										i!==index
+										?	item
+										:	event.target.checked
+									),
+									lastRingDay:0,
+								}]);
+							},
+						}),
+					]),
+				])
+			),
 		]),
 
 		node_dom("button[innerText=Zurück][className=back]",{
@@ -222,6 +280,7 @@ const checkEntriesEffect=(entries,actions)=>{
 		console.log("check for ring...")
 		const date=new Date();
 		const msPerDay=24*60*60*1000;
+		const weekDay=(date.getDay()+6)%7;
 		const time=[
 			date.getHours(),
 			date.getMinutes(),
@@ -237,7 +296,11 @@ const checkEntriesEffect=(entries,actions)=>{
 				hour===time[0]&&
 				minute===time[1]&&
 				entry.lastRingDay<thisDay&&
-				entry.disabled===false
+				!entry.disabled&&
+				(
+					entry.ringEveryDay||
+					entry.ringDays[weekDay]
+				)
 				//TODO check wecker on and correct day;
 			){
 				actions.editEntry([entry.id,{
