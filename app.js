@@ -15,13 +15,13 @@ const entryTemplate={
 	time:"12:00",
 	isRinging:false,
 	lastRingDay:0,
+	disabled:false,
 }
 const model={
 	init:()=>{
 		const entries=localStorage.getItem("wecker_entries");
 		const state={
 			editing:-1,
-			audioPlayer:null,
 			entries:entries
 			?
 				JSON.parse(entries)
@@ -90,13 +90,15 @@ function IndexEntry({
 		name,
 		time,
 		isRinging,
+		disabled,
 	},
 	actions,
 }){
 	return[
 		node_dom("tr",{
 				F:{
-					isRinging,
+					ringing:isRinging,
+					disabled,
 				},
 			},
 			[
@@ -114,7 +116,7 @@ function IndexEntry({
 						},
 					}),
 					isRinging&&
-					node_dom("button[innerText=STOPP!!][style=color:yellow]",{
+					node_dom("button[innerText=STOPP!][style=color:green]",{
 						onclick:()=>{
 							actions.editEntry([id,{isRinging:false}]);
 						},
@@ -189,6 +191,20 @@ function ScreenEditing({entry,actions}){
 				}),
 			]),
 		]),
+		node_dom("p",null,[
+			node_dom("label",{title:`Wecker ist derzeit ${entry.disabled?'aus':'an'}`},[
+				node_dom("span[innerText=Wecker einschalten]"),
+				node_dom("input[type=checkbox]",{
+					checked:!entry.disabled,
+					oninput:(event)=>{
+						actions.editEntry([entry.id,{
+							disabled:!event.target.checked,
+							lastRingDay:0,
+						}]);
+					},
+				}),
+			]),
+		]),
 
 		node_dom("button[innerText=Zurück][style=color:green]",{
 			onclick:()=>{
@@ -217,7 +233,8 @@ const checkEntriesEffect=(entries,actions)=>{
 			if(
 				hour===time[0]&&
 				minute===time[1]&&
-				entry.lastRingDay<thisDay
+				entry.lastRingDay<thisDay&&
+				entry.disabled===false
 				//TODO check wecker on and correct day;
 			){
 				actions.editEntry([entry.id,{
@@ -225,7 +242,7 @@ const checkEntriesEffect=(entries,actions)=>{
 					lastRingDay:thisDay,
 				}]);
 				
-				alert(`ALARM! es ist ${entry.time} es klingelt wecker "${entry.name}"`);
+				//alert(`ALARM! es ist ${entry.time} es klingelt wecker "${entry.name}"`);
 				
 			}
 		}
