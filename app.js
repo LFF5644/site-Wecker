@@ -105,18 +105,18 @@ function IndexEntry({
 				node_dom("td",{innerText:name}),
 				node_dom("td",{innerText:time}),
 				node_dom("td",null,[
-					node_dom("button[innerText=DEL][style=color:red]",{
+					node_dom("button[innerText=DEL][className=delete]",{
 						onclick:()=>{
 							actions.removeEntry(id);
 						},
 					}),
-					node_dom("button[innerText=EDIT][style=color:orange]",{
+					node_dom("button[innerText=EDIT][className=edit]",{
 						onclick:()=>{
 							actions.editEntryUI(id);
 						},
 					}),
 					isRinging&&
-					node_dom("button[innerText=STOPP!][style=color:green]",{
+					node_dom("button[innerText=STOPP!][className=stop]",{
 						onclick:()=>{
 							actions.editEntry([id,{isRinging:false}]);
 						},
@@ -206,7 +206,7 @@ function ScreenEditing({entry,actions}){
 			]),
 		]),
 
-		node_dom("button[innerText=Zurück][style=color:green]",{
+		node_dom("button[innerText=Zurück][className=back]",{
 			onclick:()=>{
 				actions.editEntryUI(-1);
 			},
@@ -260,11 +260,7 @@ init(()=>{
 	
 
 	return[
-		{
-			S:{
-				fontFamily:"arial",
-			},
-		},
+		null,
 		[
 			editing===-1&&
 			node(ScreenMain,{actions,entries}),

@@ -1,6 +1,20 @@
+body{
+	font-family:arial,sans-serif;
+}
 button{
-	margin-left:  5px;
-	margin-right: 5px;
+	margin: 0 5px;
+}
+button.back{
+	color: green;
+}
+button.delete{
+	color: red;
+}
+button.edit{
+	color: orange;
+}
+button.stop{
+	color:green;
 }
 tr{
 	text-align: center;
