@@ -21,6 +21,7 @@ tr{
 }
 tr.ringing{
 	background-color: red;
+	transition: background-color 3s;
 }
 tr.disabled{
 	color:gray;

@@ -16,6 +16,7 @@ const entryTemplate={
 	isRinging:false,
 	lastRingDay:0,
 	disabled:false,
+	color:"#ffffff",
 	ringEveryDay:true,
 	ringDays:[
 		true,	//Montag;
@@ -114,6 +115,7 @@ function IndexEntry({
 		time,
 		isRinging,
 		disabled,
+		color,
 	},
 	actions,
 }){
@@ -127,7 +129,12 @@ function IndexEntry({
 			[
 				node_dom("td",{innerText:name}),
 				node_dom("td",{innerText:time}),
-				node_dom("td",null,[
+				node_dom("td",{
+					S:{
+						backgroundColor:color,
+					},
+				},
+				[
 					node_dom("button[innerText=DEL][className=delete]",{
 						onclick:()=>{
 							actions.removeEntry(id);
@@ -225,6 +232,20 @@ function ScreenEditing({entry,actions}){
 							lastRingDay:0,
 						}]);
 					},
+				}),
+			]),
+		]),
+		node_dom("p",null,[
+			node_dom("label",null,[
+				node_dom("span[innerText=Wecker Fabe ]"),
+				node_dom("input[type=color]",{
+					value:entry.color,
+					oninput:event=>{
+						actions.editEntry([entry.id,{
+							color:event.target.value,
+							lastRingDay:0,
+						}]);
+					}
 				}),
 			]),
 		]),
