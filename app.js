@@ -216,12 +216,9 @@ function IndexEntry({
 }
 function ScreenMain({entries,actions}){
 	const createEntry=()=>{
-		const name=prompt("Wecker-Name:")||"Namenloser Wecker";
-		const time=prompt("Wecker-Zeit:")||"00:00";
-		actions.addEntry({
-			name,
-			time,
-		});
+		const id=Date.now();
+		actions.addEntry({id});
+		actions.editEntryUI(id);
 	};
 	return [
 		node_dom("h1[innerText=Wecker]"),
