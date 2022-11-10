@@ -5,12 +5,12 @@ on:
     branches-ignore:
       - dev
     paths:
-      - 'README.md'
+      - '*'
   pull_request:
     branches-ignore:
       - dev
     paths:
-      - 'README.md'
+      - '*'
   workflow_dispatch:
 
 jobs:
