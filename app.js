@@ -27,6 +27,11 @@ const entryTemplate={
 		false,	//Samstag;
 		false,	//Sonntag;
 	],
+	ringMode:[
+		true,	//Ton;
+		false, 	//Vibrate;
+		true,	//Notify;
+	],
 }
 const dayNames=[
 	"Montag",
@@ -36,6 +41,11 @@ const dayNames=[
 	"Freitag",
 	"Samstag",
 	"Sonntag",
+];
+const ringModeNames=[
+	"Ton",
+	"Vibrate",
+	"Notify",
 ];
 
 const model={
@@ -75,7 +85,7 @@ const model={
 			.filter(item=>item.id!==itemId)
 		),
 	}),
-	saveEntries:(state)=>{
+	saveEntries:state=>{
 		if(typeof(state.entries)!=="object"){return state;}
 		localStorage.setItem("wecker_entries",JSON.stringify(state.entries));
 		return state;
@@ -94,12 +104,61 @@ const model={
 		),
 	}),
 };
-function Ringer({I:{isRinging}}) {
+
+function notify({
+	title,
+	text,
+	icon,
+	image,
+	onclick,
+	onclose,
+}){
+	if(Notification.permission==="denied"){return;}
+	const msg=new Notification(title,{
+		body:text,
+		requireInteraction:true,
+	});
+	msg.onclick=onclick;
+	msg.onclose=onclose;
+}
+
+function Ringer({
+	I:{
+		id,
+		name,
+		time,
+		isRinging,
+		ringMode,
+	},
+	actions,
+}){
 	const player=hook_dom('audio[loop]',{src:audio_ring});
 	hook_effect(()=>{
 		if(isRinging){
-			player.currentTime=0;
-			player.play();
+			if(ringMode[0]){// Ton;
+				player.currentTime=0;
+				player.play();
+			}
+			if(ringMode[1]){// Vibrate;
+				navigator.vibrate(1e3+1e3);
+			}
+			if(ringMode[2]){// Notify;
+				notify({
+					title:name,
+					text:`Wecker ${name} klingelt, es ist ${time}`,
+					onclick:()=>{
+						console.log("MSG.onclick();");
+						actions.editEntryUI(-1);
+					},
+					onclose:()=>{
+						console.log("MSG.onclose();");
+						actions.editEntry([
+							id,
+							{isRinging:false},
+						]);
+					},
+				});
+			}
 		}
 		else{
 			player.pause();
@@ -157,7 +216,7 @@ function IndexEntry({
 }
 function ScreenMain({entries,actions}){
 	const createEntry=()=>{
-		const name=prompt("Wecker-Name:")||"no Name";
+		const name=prompt("Wecker-Name:")||"Namenloser Wecker";
 		const time=prompt("Wecker-Zeit:")||"00:00";
 		actions.addEntry({
 			name,
@@ -226,7 +285,7 @@ function ScreenEditing({entry,actions}){
 				node_dom("span[innerText=Wecker einschalten ]"),
 				node_dom("input[type=checkbox]",{
 					checked:!entry.disabled,
-					oninput:(event)=>{
+					oninput:event=>{
 						actions.editEntry([entry.id,{
 							disabled:!event.target.checked,
 							lastRingDay:0,
@@ -237,7 +296,7 @@ function ScreenEditing({entry,actions}){
 		]),
 		node_dom("p",null,[
 			node_dom("label",null,[
-				node_dom("span[innerText=Wecker Fabe ]"),
+				node_dom("span[innerText=Wecker-Farbe ]"),
 				node_dom("input[type=color]",{
 					value:entry.color,
 					oninput:event=>{
@@ -254,7 +313,7 @@ function ScreenEditing({entry,actions}){
 				node_dom("span[innerText=Jeden Tag klingeln ]"),
 				node_dom("input[type=checkbox]",{
 					checked:entry.ringEveryDay,
-					oninput:(event)=>{
+					oninput:event=>{
 						actions.editEntry([entry.id,{
 							ringEveryDay:event.target.checked,
 							lastRingDay:0,
@@ -272,9 +331,32 @@ function ScreenEditing({entry,actions}){
 						node_dom(`span[innerText=${day} ]`),
 						node_dom("input[type=checkbox]",{
 							checked:entry.ringDays[index],
-							oninput:(event)=>{
+							oninput:event=>{
 								actions.editEntry([entry.id,{
 									ringDays:entry.ringDays.map((item,i)=>
+										i!==index
+										?	item
+										:	event.target.checked
+									),
+									lastRingDay:0,
+								}]);
+							},
+						}),
+					]),
+				])
+			),
+		]),
+		node_dom("fieldset",null,[
+			node_dom("legend[innerText=Klingel-Optionen]"),
+			...ringModeNames.map((name,index)=>
+				node_dom("p",null,[
+					node_dom("label",null,[
+						node_dom(`span[innerText=${name} ]`),
+						node_dom("input[type=checkbox]",{
+							checked:entry.ringMode[index],
+							oninput:event=>{
+								actions.editEntry([entry.id,{
+									ringMode:entry.ringMode.map((item,i)=>
 										i!==index
 										?	item
 										:	event.target.checked
@@ -329,13 +411,15 @@ const checkEntriesEffect=(entries,actions)=>{
 					lastRingDay:thisDay,
 				}]);
 				
-				//alert(`ALARM! es ist ${entry.time} es klingelt wecker "${entry.name}"`);
-				
+				// if entry ring;
+
 			}
 		}
 	},5000);
 	return ()=>clearInterval(interval);
 }
+
+Notification.requestPermission();
 
 init(()=>{
 	const [
@@ -357,7 +441,7 @@ init(()=>{
 				actions,
 				entry:entries.find(item=>item.id===editing),
 			}),
-			node_map(Ringer,entries),
+			node_map(Ringer,entries,{actions}),
 		],
 	];
 });
