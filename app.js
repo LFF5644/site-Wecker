@@ -140,7 +140,7 @@ function Ringer({
 				player.play();
 			}
 			if(ringMode[1]){// Vibrate;
-				navigator.vibrate(1e3+1e3);
+				navigator.vibrate(1e3*2);
 			}
 			if(ringMode[2]){// Notify;
 				notify({
@@ -378,6 +378,15 @@ function ScreenEditing({entry,actions}){
 
 	];
 }
+function checkSave(entries,actions){
+	const clearSaveInterval=()=>{try{clearInterval(interval)}catch(e){}};
+	const interval=setInterval(()=>{
+		console.log("deine Wecker werden gespeichert...");
+		actions.saveEntries();
+		clearSaveInterval();
+	},2e3);
+	return clearSaveInterval;
+}
 const checkEntriesEffect=(entries,actions)=>{
 	const interval=setInterval(()=>{
 		console.log("check for ring...")
@@ -426,7 +435,7 @@ init(()=>{
 		{entries,editing},
 		actions,
 	]=hook_model(model);
-	hook_effect(actions.saveEntries,[entries]);
+	hook_effect(checkSave,[entries,actions]);
 	hook_effect(checkEntriesEffect,[entries,actions]);
 	
 
