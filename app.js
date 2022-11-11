@@ -140,7 +140,7 @@ function Ringer({
 				player.play();
 			}
 			if(ringMode[1]){// Vibrate;
-				navigator.vibrate(1e3*2);
+				navigator.vibrate(2e3);
 			}
 			if(ringMode[2]){// Notify;
 				notify({
@@ -376,13 +376,11 @@ function ScreenEditing({entry,actions}){
 	];
 }
 function checkSave(entries,actions){
-	const clearSaveInterval=()=>{try{clearInterval(interval)}catch(e){}};
-	const interval=setInterval(()=>{
+	const timeout=setTimeout(()=>{
 		console.log("deine Wecker werden gespeichert...");
 		actions.saveEntries();
-		clearSaveInterval();
 	},2e3);
-	return clearSaveInterval;
+	return ()=>clearTimeout(timeout);
 }
 const checkEntriesEffect=(entries,actions)=>{
 	const interval=setInterval(()=>{
