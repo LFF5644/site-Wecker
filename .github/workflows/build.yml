@@ -33,5 +33,5 @@ jobs:
 
       - name: execute pull on server
         if: github.ref == 'refs/heads/master'
-        run: node build.js pull
+        run:
           curl https://lff.l3p3.de/server/git/gitPull.api
