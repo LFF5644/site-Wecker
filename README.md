@@ -1,4 +1,4 @@
-# Wecker
+# [LFF.ONE / Wecker](https://lff.one/Wecker)
 Ein kleines simples programm was es ermöglicht einen Wecker zu stellen.
 
 ### SPEED
